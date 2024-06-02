@@ -1,0 +1,237 @@
+Microsoft (R) Macro Assembler Version 6.11		    05/29/24 11:09:23
+tempfile.asm						     Page 1 - 1
+
+
+
+				assume cs:code,ds:data,ss:stack,es:extended
+ 0000				extended segment              
+ 0000  0400 [			        db 1024 dup (0)
+        00
+       ]
+ 0400				extended ends
+ 0000				stack segment                 
+ 0000  0400 [			        db 1024 dup (0)
+        00
+       ]
+ 0400				stack ends
+ 0000				data segment                 
+ 0000  0100 [			        _buff_p db 256 dup (24h)
+        24
+       ]
+ 0100  0100 [			        _buff_s db 256 dup (0)
+        00
+       ]
+ 0200 0A 4F 75 74 70 75		        LL_w db 0ah,'Output:',0
+       74 3A 00
+ 0209 0A 49 6E 70 75 74			    LL_r db 0ah,'Input:',0
+       3A 00
+ 0211 0000					_i dw 0
+ 0213 0000					_factor dw 0
+ 0215 0000					_n dw 0
+
+ 0217				data ends
+ 0000				code segment                  
+ 0000  B8 ---- R		start:  mov ax,extended       
+ 0003  8E C0			        mov es,ax             
+ 0005  B8 ---- R		        mov ax,stack
+ 0008  8E D0			        mov ss,ax
+ 000A  BC 0400			        mov sp,1024
+ 000D  8B EC			        mov bp,sp
+ 000F  B8 ---- R		        mov ax,data
+ 0012  8E D8			        mov ds,ax
+ 0014  B8 0000			_0:     MOV AX,0
+ 0017  A3 0211 R				MOV _i,AX
+ 001A  E8 0070			_1:     CALL _read
+ 001D  26: A3 0000				MOV ES:[0],AX
+ 0021  26: A1 0000		_2:     MOV AX,ES:[0]
+ 0025  A3 0215 R				MOV _n,AX
+ 0028  A1 0215 R		_3:     MOV AX,_n
+ 002B  83 F8 01					CMP AX,1
+ 002E  7C 05					JL _5
+ 0030  EA ---- 0040 R		_4:     JMP far ptr _7
+ 0035  B8 0000			_5:     MOV AX,0
+ 0038  A3 0213 R				MOV _factor,AX
+ 003B  EA ---- 0046 R		_6:     JMP far ptr _8
+ 0040  B8 0001			_7:     MOV AX,1
+ 0043  A3 0213 R				MOV _factor,AX
+ 0046  A1 0211 R		_8:     MOV AX,_i
+ 0049  3B 06 0215 R				CMP AX,_n
+ 004D  7C 05					JL _10
+ 004F  EA ---- 007E R		_9:     JMP far ptr _15
+ 0054  A1 0211 R		_10:    MOV AX,_i
+ 0057  83 C0 01					ADD AX,1
+ 005A  26: A3 0002				MOV ES:[2],AX
+ 005E  26: A1 0002		_11:    MOV AX,ES:[2]
+ 0062  A3 0211 R				MOV _i,AX
+ 0065  A1 0213 R		_12:    MOV AX,_factor
+ 0068  8B 1E 0211 R				MOV BX,_i
+ 006C  F7 E3					MUL BX
+ 006E  26: A3 0004				MOV ES:[4],AX
+ 0072  26: A1 0004		_13:    MOV AX,ES:[4]
+ 0076  A3 0213 R				MOV _factor,AX
+ 0079  EA ---- 0046 R		_14:    JMP far ptr _8
+ 007E  A1 0213 R		_15:    MOV AX,_factor
+ 0081  50					PUSH AX
+ 0082  E8 005D			_16:    CALL _write
+ 0085  26: A3 0006				MOV ES:[6],AX
+ 0089  B4 4C			quit:	mov ah,4ch
+ 008B  CD 21					int 21h
+
+ 008D  55			_read:      push bp
+ 008E  8B EC			            mov bp,sp
+ 0090  BB 0209 R		            mov bx,offset LL_r
+ 0093  E8 0098			            call _print
+ 0096  BB 0100 R		            mov bx,offset _buff_s
+ 0099  BF 0000			            mov di,0
+ 009C  B4 01			_r_lp_1:	mov ah,1
+ 009E  CD 21			            int 21h
+ 00A0  3C 0D			            cmp al,0dh
+ 00A2  74 05			            je _r_brk_1
+ 00A4  88 01			            mov ds:[bx+di],al
+ 00A6  47			            inc di
+ 00A7  EB F3			            jmp short _r_lp_1
+ 00A9  B4 02			_r_brk_1:	mov ah,2
+ 00AB  B2 0A			            mov dl,0ah
+ 00AD  CD 21			            int 21h
+ 00AF  B8 0000			            mov ax,0
+ 00B2  BE 0000			            mov si,0
+ 00B5  B9 000A			            mov cx,10
+ 00B8  8A 10			_r_lp_2:	mov dl,ds:[bx+si]
+ 00BA  80 FA 30			            cmp dl,30h
+ 00BD  72 15			            jb _r_brk_2
+ 00BF  80 FA 39			            cmp dl,39h
+ 00C2  77 10			            ja _r_brk_2
+ 00C4  80 EA 30			            sub dl,30h
+ 00C7  88 10			            mov ds:[bx+si],dl
+ 00C9  F7 E1			            mul cx
+ 00CB  8A 10			            mov dl,ds:[bx+si]
+ 00CD  B6 00			            mov dh,0
+ 00CF  03 C2			            add ax,dx
+ 00D1  46				        inc si
+ 00D2  EB E4				        jmp short _r_lp_2
+ 00D4  8B CF			_r_brk_2:	mov cx,di
+ 00D6  BE 0000				        mov si,0
+ 00D9  C6 00 00			_r_lp_3:	mov byte ptr ds:[bx+si],0
+ 00DC  E2 FB				        loop _r_lp_3
+ 00DE  8B E5				        mov sp,bp
+ 00E0  5D				        pop bp
+ 00E1  C3				        ret
+ 00E2  55			_write: 	push bp
+ 00E3  8B EC			            mov bp,sp
+ 00E5  BB 0200 R		            mov bx,offset LL_w
+ 00E8  E8 0043			            call _print
+ 00EB  8B 46 04			            mov ax,ss:[bp+4]
+ 00EE  BB 000A			            mov bx,10
+ 00F1  B9 0000			            mov cx,0
+ 00F4  BA 0000			_w_lp_1:	mov dx,0
+ 00F7  F7 F3			            div bx
+ 00F9  52			            push dx
+ 00FA  41			            inc cx
+ 00FB  83 F8 00			            cmp ax,0
+ 00FE  75 F4			            jne _w_lp_1
+ 0100  BF 0000 R		            mov di ,offset _buff_p
+ 0103  58			_w_lp_2:	pop ax
+ 0104  83 C0 30			            add ax,30h
+ 0107  88 05			            mov ds:[di],al
+ 0109  47			            inc di
+ 010A  E2 F7			            loop _w_lp_2
+ 010C  BA 0000 R		            mov dx,offset _buff_p
+ 010F  B4 09			            mov ah,09h
+ 0111  CD 21			            int 21h
+ 0113  8B CF			            mov cx,di
+ 0115  81 E9 0000 R		            sub cx,offset _buff_p
+ 0119  BF 0000 R		            mov di,offset _buff_p
+ 011C  B0 24			_w_lp_3:	mov al,24h
+ 011E  88 05			            mov ds:[di],al
+ 0120  47			            inc di
+ 0121  E2 F9			            loop _w_lp_3
+ 0123  8B C7			            mov ax,di
+ 0125  2D 0000 R		            sub ax,offset _buff_p
+ 0128  8B E5			            mov sp,bp
+ 012A  5D			            pop bp
+ 012B  C2 0002			            ret 2
+ 012E  BE 0000			_print:    	mov si,0
+ 0131  BF 0000 R			        mov di,offset _buff_p
+ 0134  8A 00			_p_lp_1:	mov al,ds:[bx+si]
+ 0136  3C 00			            cmp al,0
+ 0138  74 06			            je _p_brk_1
+ 013A  88 05			            mov ds:[di],al
+ 013C  46			            inc si
+ 013D  47			            inc di
+ 013E  EB F4			            jmp short _p_lp_1
+ 0140  BA 0000 R		_p_brk_1:	mov dx,offset _buff_p
+ 0143  B4 09			            mov ah,09h
+ 0145  CD 21			            int 21h
+ 0147  8B CE			            mov cx,si
+ 0149  BF 0000 R		            mov di,offset _buff_p
+ 014C  B0 24			_p_lp_2:    mov al,24h
+ 014E  88 05			            mov ds:[di],al
+ 0150  47			            inc di
+ 0151  E2 F9			            loop _p_lp_2
+ 0153  C3			            ret
+ 0154				code ends
+				end start
+
+Microsoft (R) Macro Assembler Version 6.11		    05/29/24 11:09:23
+tempfile.asm						     Symbols 2 - 1
+
+
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+code . . . . . . . . . . . . . .	16 Bit	 0154	  Para	  Private 
+data . . . . . . . . . . . . . .	16 Bit	 0217	  Para	  Private 
+extended . . . . . . . . . . . .	16 Bit	 0400	  Para	  Private 
+stack  . . . . . . . . . . . . .	16 Bit	 0400	  Para	  Private 
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+LL_r . . . . . . . . . . . . . .	Byte	 0209	  data	
+LL_w . . . . . . . . . . . . . .	Byte	 0200	  data	
+_0 . . . . . . . . . . . . . . .	L Near	 0014	  code	
+_10  . . . . . . . . . . . . . .	L Near	 0054	  code	
+_11  . . . . . . . . . . . . . .	L Near	 005E	  code	
+_12  . . . . . . . . . . . . . .	L Near	 0065	  code	
+_13  . . . . . . . . . . . . . .	L Near	 0072	  code	
+_14  . . . . . . . . . . . . . .	L Near	 0079	  code	
+_15  . . . . . . . . . . . . . .	L Near	 007E	  code	
+_16  . . . . . . . . . . . . . .	L Near	 0082	  code	
+_1 . . . . . . . . . . . . . . .	L Near	 001A	  code	
+_2 . . . . . . . . . . . . . . .	L Near	 0021	  code	
+_3 . . . . . . . . . . . . . . .	L Near	 0028	  code	
+_4 . . . . . . . . . . . . . . .	L Near	 0030	  code	
+_5 . . . . . . . . . . . . . . .	L Near	 0035	  code	
+_6 . . . . . . . . . . . . . . .	L Near	 003B	  code	
+_7 . . . . . . . . . . . . . . .	L Near	 0040	  code	
+_8 . . . . . . . . . . . . . . .	L Near	 0046	  code	
+_9 . . . . . . . . . . . . . . .	L Near	 004F	  code	
+_buff_p  . . . . . . . . . . . .	Byte	 0000	  data	
+_buff_s  . . . . . . . . . . . .	Byte	 0100	  data	
+_factor  . . . . . . . . . . . .	Word	 0213	  data	
+_i . . . . . . . . . . . . . . .	Word	 0211	  data	
+_n . . . . . . . . . . . . . . .	Word	 0215	  data	
+_p_brk_1 . . . . . . . . . . . .	L Near	 0140	  code	
+_p_lp_1  . . . . . . . . . . . .	L Near	 0134	  code	
+_p_lp_2  . . . . . . . . . . . .	L Near	 014C	  code	
+_print . . . . . . . . . . . . .	L Near	 012E	  code	
+_r_brk_1 . . . . . . . . . . . .	L Near	 00A9	  code	
+_r_brk_2 . . . . . . . . . . . .	L Near	 00D4	  code	
+_r_lp_1  . . . . . . . . . . . .	L Near	 009C	  code	
+_r_lp_2  . . . . . . . . . . . .	L Near	 00B8	  code	
+_r_lp_3  . . . . . . . . . . . .	L Near	 00D9	  code	
+_read  . . . . . . . . . . . . .	L Near	 008D	  code	
+_w_lp_1  . . . . . . . . . . . .	L Near	 00F4	  code	
+_w_lp_2  . . . . . . . . . . . .	L Near	 0103	  code	
+_w_lp_3  . . . . . . . . . . . .	L Near	 011C	  code	
+_write . . . . . . . . . . . . .	L Near	 00E2	  code	
+quit . . . . . . . . . . . . . .	L Near	 0089	  code	
+start  . . . . . . . . . . . . .	L Near	 0000	  code	
+
+	   0 Warnings
+	   0 Errors
