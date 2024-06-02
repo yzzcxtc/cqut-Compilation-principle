@@ -1,1 +1,2 @@
 *.toc linguist-language=python
+*.asm linguist-language=python
